@@ -4,7 +4,7 @@ import dash_html_components as html
 import pandas as pd
 import os, sys
 import plotly.graph_objs as go
-from Dashboard import return_combine_df_for_graph,get_dfs_for_display_inflation, get_gdp_graphs
+from Dashboard import return_combine_df_for_graph,get_dfs_for_display_inflation, get_gdp_graphs,df_pct_change_for_dash
 
 """
 not a class, maybe will not be turned into one
@@ -31,6 +31,12 @@ text_dict = {
 	space 
 	""",
 	'GDP':"""
+	inflation 
+
+
+	space 
+	""",
+	'Change':"""
 	inflation 
 
 
@@ -114,6 +120,12 @@ def get_df_from_data(topic):
 		df_for_dash = df_convert_for_multi_display(gdp_percent, ['Time Period'])
 		df_spread_for_dash = df_convert_for_multi_display(gdp_change, ['Time Period'])
 		index = gdp_percent.index
+	elif topic == 'Change':
+		text = text_dict[topic]
+		alrdy_change_df, changed_df = df_pct_change_for_dash() 
+		df_for_dash = df_convert_for_multi_display(changed_df, [])
+		df_spread_for_dash = df_convert_for_multi_display(alrdy_change_df, [])
+		index = changed_df.index
 	else:
 		pass
 	return index, df_for_dash, text, df_spread_for_dash
@@ -182,7 +194,8 @@ def build_interact_template(dash_app, index, df_for_dash, text, df_spread_for_da
 				)
 			}
 		),
-	dcc.Markdown(children=markdown_text)
+	dcc.Markdown(children=markdown_text),
+	dcc.Markdown("""[links](http://0.0.0.0:8080/home)""")
 	])
 	return dash_app.layout
 
@@ -230,6 +243,12 @@ def run_gdp_summary(dash_app):
 	data = get_df_from_data('GDP')
 	# index, df_for_dash, text
 	return_data = build_interact_template(dash_app, data[0], data[1], data[2], data[3], 'GDP as percent', 'GDP as percent change')
+	return return_data
+
+def run_change_summary(dash_app):
+	data = get_df_from_data('Change')
+	# index, df_for_dash, text
+	return_data = build_interact_template(dash_app, data[0], data[1], data[2], data[3], 'Reported as Changed', 'Converted to Change')
 	return return_data
 
 #if __name__ == '__main__':

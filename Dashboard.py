@@ -425,7 +425,7 @@ inflation_fred_vars ={
 	'FRED var':'MEDCPIM158SFRBCLE',
 	'Summary':'Median Consumer Price Index (CPI) is a measure of core inflation calculated the Federal Reserve Bank of Cleveland and the Ohio State University. Median CPI was created as a different way to get a “Core CPI” measure, or a better measure of underlying inflation trends. '
 	},
-}
+} 
 
 gdp_vars ={
 	'Real Gross Domestic Product Change':{
@@ -482,7 +482,7 @@ gdp_vars ={
 	'FRED var':'A191RP1Q027SBEA',
 	'Summary':'not inflation addjusted'
 	},
-	'Gross National Product ':{
+	'Gross National Product':{
 	'Start Date':'1947-04-01',
 	'End Date':'2018-07-01',
 	'Frequency':'Quarterly',
@@ -589,6 +589,87 @@ def get_gdp_graphs():
 	df_gdp_change = base.get_full_group_df(df_dict_change, time_interval='6M', group_unit='mean')
 	df_gdp_percent = base.get_full_group_df(df_dict_percent, time_interval='6M', group_unit='mean')
 	return df_gdp_percent, df_gdp_change
+
+def combine_dict(dict_array,exclude_array=[]):
+	master_dict = {}
+	for dict in dict_array:
+		for name, values in dict.items():
+			if name not in exclude_array:
+				master_dict[name] = values
+	return master_dict
+
+def get_list_by_var_from_dict(name_array, type, wanted_val, path):
+	key = '18c95216b1230de68164158aeb02e2c2'
+	# bade login with key
+	base = Dashboard(key)
+	wanted_list = []
+	other_list = []
+	df_dict = base.saved_csvs_to_dict(name_array, path)
+	for name, dict in df_dict.items():
+		if dict[type][0] == wanted_val:
+			wanted_list.append(name)
+		else:
+			other_list.append(name)
+	return wanted_list, other_list
+
+def convert_df_to_percent_change(df, periods):
+	for col in df.columns:
+		#print(col)
+		df[col] = df[col].pct_change(periods)
+	df = df.iloc[periods+1:,:]
+	return df
+
+def group_by_time_frame(dict_vals):
+	return_dict = {}
+	daily_list = []
+	weekly_list = []
+	monthly_list = []
+	quarterly_list = []
+	yearly_list = []
+	for name, dict in dict_vals.items():
+		if dict['Frequency'] == 'Daily':
+			daily_list.append(name)
+		if dict['Frequency'] == 'Weekly':
+			daily_list.append(name)
+		if dict['Frequency'] == 'Monthly':
+			monthly_list.append(name)
+		if dict['Frequency'] == 'Quarterly':
+			quarterly_list.append(name)
+		if dict['Frequency'] == 'Annual':
+			yearly_list.append(name)
+	return_dict['Daily'] = daily_list
+	return_dict['Weekly'] = weekly_list
+	return_dict['Monthly'] = monthly_list
+	return_dict['Quarterly'] = quarterly_list
+	return_dict['Annual'] = yearly_list
+	return return_dict
+
+def df_pct_change_for_dash():
+	start =os.path.dirname(os.path.realpath(sys.argv[0])) 
+	path  = os.path.join(start, 'Fred Graphs')
+	dict_array = [ gdp_vars, fred_econ_data, inflation_fred_vars]
+	exclude_array = ['Inflation Expectation', 'Median Consumer Price Index', 'Moody Aaa Yield']
+	combined_dict = combine_dict(dict_array, exclude_array=exclude_array)
+	pc_list, c_list = get_list_by_var_from_dict(combined_dict.keys(), 'Type', 'Percent Change', path)
+	combined_df_pc = get_basic_combined_df_for_dash(pc_list, path).drop(['Time Period'],axis=1)
+	combined_df_chg = get_basic_combined_df_for_dash(c_list, path).drop(['Time Period'],axis=1)
+	df_change_chg = convert_df_to_percent_change(combined_df_chg,2)
+	return combined_df_pc, df_change_chg
+
+"""
+start =os.path.dirname(os.path.realpath(sys.argv[0])) 
+path  = os.path.join(start, 'Fred Graphs')
+dict_array = [ gdp_vars, fred_econ_data, inflation_fred_vars]
+combined_dict = combine_dict(dict_array)
+pc_list, c_list = get_list_by_var_from_dict(combined_dict.keys(), 'Type', 'Percent Change', path)
+combined_df_all = get_basic_combined_df_for_dash(combined_dict.keys(),path).drop(['Time Period'],axis=1)
+time_dict = group_by_time_frame(combined_dict)
+periods=2
+pct_chn_df = convert_df_to_percent_change(combined_df_all,periods)
+
+a,b = df_pct_change_for_dash()
+print(b)
+"""
 
 #print(inflation_spreads)
 """

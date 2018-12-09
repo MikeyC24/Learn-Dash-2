@@ -15,11 +15,11 @@ from flask import request, jsonify, send_file, render_template
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 server = flask.Flask(__name__)
-dash_app1 = Dash(__name__, server = server, url_base_pathname='/dashboard/' )
+dash_app_change = Dash(__name__, server = server, url_base_pathname='/Percent Change/' )
 dash_app_infl = Dash(__name__, server = server, url_base_pathname='/Inflation/',external_stylesheets=external_stylesheets)
 dash_app_gdp = Dash(__name__, server = server, url_base_pathname='/GDP/',external_stylesheets=external_stylesheets)
 dash_app_ir = Dash(__name__, server = server, url_base_pathname='/Interest Rates/',external_stylesheets=external_stylesheets)
-dash_app1.layout = html.Div([html.H1('Hi there, I am app1 for dashboards')])
+dash_app_change.layout = DataDisplay.run_change_summary(dash_app_change)
 dash_app_infl.layout = DataDisplay.run_inflation_summary(dash_app_infl)
 dash_app_gdp.layout = DataDisplay.run_gdp_summary(dash_app_gdp)
 dash_app_ir.layout = DataDisplay.run_ir_summary(dash_app_ir)
@@ -27,15 +27,10 @@ dash_app_ir.layout = DataDisplay.run_ir_summary(dash_app_ir)
 @server.route('/')
 @server.route('/hello')
 def hello():
-    return 'hello world!'
+    return render_template('home.html')
 
-@server.route('/dashboard')
+@server.route('/Percent Change')
 def render_dashboard():
-    return flask.redirect('/dash1')
-
-
-@server.route('/reports')
-def render_reports():
     return flask.redirect('/dash1')
 
 
@@ -62,7 +57,7 @@ def render_reports1():
 
 
 app = DispatcherMiddleware(server, {
-    '/dash1': dash_app1.server,
+    '/dash1': dash_app_change.server,
     '/dash2': dash_app_infl.server,
     '/model':server,
     '/dash3': dash_app_gdp.server,
